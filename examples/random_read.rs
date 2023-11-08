@@ -1,3 +1,4 @@
+use std::io::Write;
 use std::path::PathBuf;
 use std::str::FromStr;
 use std::time::Instant;
@@ -30,6 +31,20 @@ pub fn main() {
 
     println!("start batch read");
     let t = Instant::now();
-    std::hint::black_box(par_batch_read(file_path, &mut chunks, threads)).unwrap();
-    println!("end batch read, use {:?}", t.elapsed())
+    par_batch_read(file_path, &mut chunks, threads).unwrap();
+    println!("end batch read, use {:?}", t.elapsed());
+
+    let file = std::fs::File::options()
+        .create(true)
+        .write(true)
+        .open("tempfile")
+        .expect("failed to open file");
+
+    let mut file = std::io::BufWriter::new( file);
+
+    for chunk in chunks {
+        file.write_all(&chunk.data).unwrap();
+    }
+
+    file.flush().unwrap();
 }
