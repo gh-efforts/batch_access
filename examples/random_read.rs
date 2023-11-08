@@ -21,12 +21,14 @@ pub fn main() {
 
     println!("alloc temp memory");
 
-    let mut chunks = vec![Chunk { data: Vec::with_capacity(32), pos: 0 }; num];
+    let mut chunks = Vec::with_capacity(num);
     let mut rng = rand::thread_rng();
 
     println!("gen random pos");
-    for x in &mut chunks {
-        x.pos = rng.gen_range(0..(file_len as usize - 31));
+
+    for _ in 0..num {
+        let chunk = Chunk { data: Vec::with_capacity(32), pos: rng.gen_range(0..(file_len as usize - 31)) };
+        chunks.push(chunk);
     }
 
     println!("start batch read");
