@@ -13,7 +13,7 @@ pub struct Chunk {
 
 fn batch_read(
     path: impl AsRef<Path>,
-    chunks: &mut [Chunk],
+    chunks: &mut [&mut Chunk],
 ) -> std::io::Result<()> {
     let mut jobs = Vec::with_capacity(chunks.len());
 
@@ -46,10 +46,10 @@ fn batch_read(
     })
 }
 
-pub fn current_par_batch_read(
+pub fn current_par_batch_read2(
     path: impl AsRef<Path> + Sync,
-    chunks: &mut [Chunk],
-    batch_len: usize
+    chunks: &mut [&mut Chunk],
+    batch_len: usize,
 ) -> std::io::Result<()> {
     let res = chunks
         .par_chunks_mut(batch_len)
@@ -59,8 +59,20 @@ pub fn current_par_batch_read(
     res.map(|_| ())
 }
 
-pub fn par_batch_read(
+pub fn current_par_batch_read(
     path: impl AsRef<Path> + Sync,
+    chunks: &mut [Chunk],
+    batch_len: usize,
+) -> std::io::Result<()> {
+    let mut chunks = chunks.iter_mut()
+        .map(|v| v)
+        .collect::<Vec<_>>();
+
+    current_par_batch_read2(path, &mut chunks, batch_len)
+}
+
+pub fn par_batch_read(
+    path: impl AsRef<Path> + Send + Sync,
     chunks: &mut [Chunk],
     threads: usize,
 ) -> std::io::Result<()> {
