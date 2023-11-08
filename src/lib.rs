@@ -4,12 +4,12 @@ use std::sync::Arc;
 #[derive(Clone)]
 pub struct Chunk {
     pub pos: usize,
-    pub data: Vec<u8>
+    pub data: Vec<u8>,
 }
 
 pub fn batch_read(
     path: impl AsRef<Path>,
-    chunks: &mut [Chunk]
+    chunks: &mut [Chunk],
 ) -> std::io::Result<()> {
     let file = compio::fs::File::open(path)?;
     let file = Arc::new(file);
@@ -35,4 +35,21 @@ pub fn batch_read(
 
         Ok(())
     })
+}
+
+pub fn par_batch_read(
+    path: impl AsRef<Path> + Sync,
+    chunks: &mut [Chunk],
+    threads: usize,
+) {
+    let batch_len = chunks.len() / threads;
+    let path = &path;
+
+    std::thread::scope(|s| {
+        for x in chunks.chunks_mut(batch_len) {
+            s.spawn(move || {
+                batch_read(&path, x).expect("batch read failed");
+            });
+        }
+    });
 }

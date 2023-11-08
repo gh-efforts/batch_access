@@ -2,13 +2,16 @@ use std::path::PathBuf;
 use std::str::FromStr;
 use std::time::Instant;
 use rand::Rng;
-use batch_access::{batch_read, Chunk};
+use batch_access::{Chunk, par_batch_read};
 
 pub fn main() {
     let mut args = std::env::args();
     args.next();
     let file_path = args.next().expect("need file path");
     let chunks_num = args.next().expect("need chunks number");
+    let threads = args.next()
+        .map(|s| usize::from_str(&s).expect("invalid threads number"))
+        .unwrap_or(std::thread::available_parallelism().unwrap().get());
 
     let num = usize::from_str(&chunks_num).expect("invalid chunks number");
     let file_path = PathBuf::from(file_path);
@@ -27,6 +30,6 @@ pub fn main() {
 
     println!("start batch read");
     let t = Instant::now();
-    batch_read(file_path, &mut chunks).unwrap();
+    par_batch_read(file_path, &mut chunks, threads);
     println!("end batch read, use {:?}", t.elapsed())
 }
