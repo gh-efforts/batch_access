@@ -18,7 +18,7 @@ pub fn batch_read(
     let mut jobs = Vec::with_capacity(chunks.len());
 
     let builder: RuntimeBuilder<IoUringDriver> = monoio::RuntimeBuilder::new();
-    let mut rt = builder.with_entries(8192)
+    let mut rt = builder
         .build()?;
 
     rt.block_on(async {

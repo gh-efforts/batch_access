@@ -11,3 +11,7 @@ rayon = "1"
 
 [dev-dependencies]
 rand = "0.8"
+
+[profile.release]
+lto = true
+codegen-units = 1
