@@ -2,7 +2,7 @@ use std::path::Path;
 use std::sync::Arc;
 
 use monoio::{IoUringDriver, RuntimeBuilder};
-use rayon::iter::{IntoParallelRefMutIterator, ParallelIterator};
+use rayon::iter::ParallelIterator;
 use rayon::slice::ParallelSliceMut;
 
 #[derive(Clone)]
