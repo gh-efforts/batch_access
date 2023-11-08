@@ -46,6 +46,19 @@ fn batch_read(
     })
 }
 
+pub fn current_par_batch_read(
+    path: impl AsRef<Path> + Sync,
+    chunks: &mut [Chunk],
+    batch_len: usize
+) -> std::io::Result<()> {
+    let res = chunks
+        .par_chunks_mut(batch_len)
+        .map(|x| batch_read(&path, x))
+        .collect::<std::io::Result<Vec<_>>>();
+
+    res.map(|_| ())
+}
+
 pub fn par_batch_read(
     path: impl AsRef<Path> + Sync,
     chunks: &mut [Chunk],
@@ -58,12 +71,6 @@ pub fn par_batch_read(
 
     pool.install(|| {
         let batch_len = chunks.len() / threads;
-
-        let res = chunks
-            .par_chunks_mut(batch_len)
-            .map(|x| batch_read(&path, x))
-            .collect::<std::io::Result<Vec<_>>>();
-
-        res.map(|_| ())
+        current_par_batch_read(path, chunks, batch_len)
     })
 }
