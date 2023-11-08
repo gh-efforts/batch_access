@@ -2,7 +2,7 @@ use std::path::Path;
 use std::sync::Arc;
 
 use monoio::{IoUringDriver, RuntimeBuilder};
-use rayon::iter::ParallelIterator;
+use rayon::iter::{IntoParallelRefMutIterator, ParallelIterator};
 use rayon::slice::ParallelSliceMut;
 
 #[derive(Clone)]
@@ -11,9 +11,9 @@ pub struct Chunk {
     pub data: Vec<u8>,
 }
 
-pub fn batch_read(
+fn batch_read(
     path: impl AsRef<Path>,
-    chunks: &mut [Chunk],
+    chunks: &mut [&mut Chunk],
 ) -> std::io::Result<()> {
     let mut jobs = Vec::with_capacity(chunks.len());
 
@@ -51,14 +51,20 @@ pub fn par_batch_read(
     chunks: &mut [Chunk],
     threads: usize,
 ) -> std::io::Result<()> {
-    let batch_len = chunks.len() / threads;
-
     let pool = rayon::ThreadPoolBuilder::new()
         .num_threads(threads)
         .build()
         .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
 
     pool.install(|| {
+        let mut chunks = chunks.par_iter_mut()
+            .map(|v|v)
+            .collect::<Vec<_>>();
+
+        chunks.par_sort_unstable_by_key(|c| c.pos);
+
+        let batch_len = chunks.len() / threads;
+
         let res = chunks
             .par_chunks_mut(batch_len)
             .map(|x| batch_read(&path, x))
