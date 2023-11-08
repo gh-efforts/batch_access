@@ -54,7 +54,6 @@ pub fn par_batch_read(
 
     pool.install(|| {
         let res = chunks
-            .par_sort_unstable_by_key(|c| c.pos)
             .par_chunks_mut(batch_len)
             .map(|x| batch_read(&path, x))
             .collect::<std::io::Result<Vec<_>>>();

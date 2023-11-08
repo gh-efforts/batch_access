@@ -31,6 +31,7 @@ pub fn main() {
         chunks.push(chunk);
     }
 
+    chunks.sort_unstable_by_key(|c| c.pos);
     println!("start batch read");
     let t = Instant::now();
     par_batch_read(file_path, &mut chunks, threads).unwrap();
