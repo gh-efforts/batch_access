@@ -1,5 +1,6 @@
 use std::path::Path;
 use std::sync::Arc;
+use monoio::{IoUringDriver, Runtime};
 
 use rayon::iter::ParallelIterator;
 use rayon::slice::ParallelSliceMut;
@@ -14,17 +15,21 @@ pub fn batch_read(
     path: impl AsRef<Path>,
     chunks: &mut [Chunk],
 ) -> std::io::Result<()> {
-    let file = compio::fs::File::open(path)?;
+    let file = monoio::fs::File::open(path)?;
     let file = Arc::new(file);
     let mut jobs = Vec::with_capacity(chunks.len());
 
-    compio::runtime::block_on(async {
+    let builder = monoio::RuntimeBuilder::new();
+    let mut rt = builder.with_entries(8192)
+        .build()?;
+
+    rt.block_on(async {
         for chunk in &mut *chunks {
             let data = std::mem::take(&mut chunk.data);
             let pos = chunk.pos;
             let file = file.clone();
 
-            let handle = compio::runtime::spawn(async move {
+            let handle = monoio::spawn(async move {
                 file.read_exact_at(data, pos).await
             });
             jobs.push(handle);
