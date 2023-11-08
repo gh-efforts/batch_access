@@ -30,6 +30,6 @@ pub fn main() {
 
     println!("start batch read");
     let t = Instant::now();
-    par_batch_read(file_path, &mut chunks, threads);
+    par_batch_read(file_path, &mut chunks, threads).unwrap();
     println!("end batch read, use {:?}", t.elapsed())
 }

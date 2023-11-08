@@ -1,6 +1,9 @@
 use std::path::Path;
 use std::sync::Arc;
 
+use rayon::iter::ParallelIterator;
+use rayon::slice::ParallelSliceMut;
+
 #[derive(Clone)]
 pub struct Chunk {
     pub pos: usize,
@@ -22,7 +25,7 @@ pub fn batch_read(
             let file = file.clone();
 
             let handle = compio::runtime::spawn(async move {
-                file.read_at(data, pos).await
+                file.read_exact_at(data, pos).await
             });
             jobs.push(handle);
         }
@@ -41,15 +44,19 @@ pub fn par_batch_read(
     path: impl AsRef<Path> + Sync,
     chunks: &mut [Chunk],
     threads: usize,
-) {
+) -> std::io::Result<()> {
     let batch_len = chunks.len() / threads;
-    let path = &path;
 
-    std::thread::scope(|s| {
-        for x in chunks.chunks_mut(batch_len) {
-            s.spawn(move || {
-                batch_read(&path, x).expect("batch read failed");
-            });
-        }
-    });
+    let pool = rayon::ThreadPoolBuilder::new()
+        .num_threads(threads)
+        .build()
+        .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+
+    pool.install(|| {
+        let res = chunks.par_chunks_mut(batch_len)
+            .map(|x| batch_read(&path, x))
+            .collect::<std::io::Result<Vec<_>>>();
+
+        res.map(|_| ())
+    })
 }
