@@ -13,7 +13,7 @@ pub struct Chunk {
 
 fn batch_read(
     path: impl AsRef<Path>,
-    chunks: &mut [&mut Chunk],
+    chunks: &mut [Chunk],
 ) -> std::io::Result<()> {
     let mut jobs = Vec::with_capacity(chunks.len());
 
@@ -57,12 +57,6 @@ pub fn par_batch_read(
         .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
 
     pool.install(|| {
-        let mut chunks = chunks.par_iter_mut()
-            .map(|v|v)
-            .collect::<Vec<_>>();
-
-        chunks.par_sort_unstable_by_key(|c| c.pos);
-
         let batch_len = chunks.len() / threads;
 
         let res = chunks
