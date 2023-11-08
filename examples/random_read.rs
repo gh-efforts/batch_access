@@ -7,7 +7,7 @@ pub fn main() {
     args.next();
     let file_path = args.next().expect("need file path");
     let file_path = PathBuf::from(file_path);
-    let metadata = file_path.metadata().expect("file not exists");
+    let metadata = file_path.metadata().expect("file does not exist");
     let file_len = metadata.len();
 
     let mut chunks = vec![Chunk { data: Vec::with_capacity(32), pos: 0 }; 26 * 10000];
