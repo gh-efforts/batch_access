@@ -11,7 +11,7 @@ pub struct Chunk {
     pub data: Vec<u8>,
 }
 
-fn batch_read(
+pub fn batch_read(
     path: impl AsRef<Path>,
     chunks: &mut [&mut Chunk],
 ) -> std::io::Result<()> {
@@ -36,13 +36,17 @@ fn batch_read(
             jobs.push(handle);
         }
 
+        let mut ret = Ok(());
+
         for (job, chunk) in jobs.into_iter().zip(chunks) {
             let res = job.await;
             chunk.data = res.1;
-            res.0?;
-        }
 
-        Ok(())
+            if res.0.is_err() {
+                ret = res.0;
+            }
+        }
+        ret
     })
 }
 
