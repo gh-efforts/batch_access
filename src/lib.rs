@@ -46,6 +46,9 @@ pub fn batch_read(
                 ret = res.0;
             }
         }
+
+        let file = Rc::into_inner(file).unwrap();
+        file.close().await?;
         ret
     })
 }
