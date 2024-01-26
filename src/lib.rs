@@ -1,5 +1,5 @@
 use std::path::Path;
-use std::sync::Arc;
+use std::rc::Rc;
 
 use monoio::{IoUringDriver, RuntimeBuilder};
 use rayon::iter::ParallelIterator;
@@ -23,7 +23,7 @@ pub fn batch_read(
 
     rt.block_on(async {
         let file = monoio::fs::File::open(path).await?;
-        let file = Arc::new(file);
+        let file = Rc::new(file);
 
         for chunk in &mut *chunks {
             let data = std::mem::take(&mut chunk.data);
