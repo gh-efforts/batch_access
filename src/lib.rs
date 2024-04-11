@@ -1,9 +1,15 @@
 use std::path::Path;
 use std::rc::Rc;
 
-use monoio::{IoUringDriver, RuntimeBuilder};
+use monoio::RuntimeBuilder;
 use rayon::iter::ParallelIterator;
 use rayon::slice::ParallelSliceMut;
+
+#[cfg(target_os = "linux")]
+type MonoioDriver = monoio::IoUringDriver;
+
+#[cfg(not(target_os = "linux"))]
+type MonoioDriver = monoio::LegacyDriver;
 
 #[derive(Clone)]
 pub struct Chunk {
@@ -17,7 +23,7 @@ pub fn batch_read(
 ) -> std::io::Result<()> {
     let mut jobs = Vec::with_capacity(chunks.len());
 
-    let builder: RuntimeBuilder<IoUringDriver> = monoio::RuntimeBuilder::new();
+    let builder: RuntimeBuilder<MonoioDriver> = monoio::RuntimeBuilder::new();
     let mut rt = builder
         .build()?;
 
